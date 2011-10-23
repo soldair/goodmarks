@@ -36,6 +36,11 @@ module.exports  = {
 			(!err).should.be.true;
 			name.should.eql('ryan');
 		});
+		//validator trims
+		valid.name('  ryan    ',function(err,name){
+			(!err).should.be.true;
+			name.should.eql('ryan');
+		});
 		valid.name('',function(err,name){
 			(!err).should.be.false;
 			err.code.should.eql('nameEmpty');
