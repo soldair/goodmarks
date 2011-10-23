@@ -1,3 +1,7 @@
+var util = require('util')
+,EventEmitter = require('events').EventEmitter
+,valid = require(__dirname+'/../lib/validate.js');
+,async = require('async');
 
 var api = {
 	db:false,
@@ -5,29 +9,39 @@ var api = {
 		this.db = db;
 	},
 	get:{
-		kid:function(data,cb){
-			var sql = "select * from kids where id='"+parseInt(data.id)+"';";
-		}
-		,kids:function(data,cb){
-			var sql = "select * from kids where ;";
-		}
-		,parent:function(data,cb){
-			var sql = "select * from parents where id='"+parseInt(data.id)+"';";
+		user:function(data,cb){
+			var sql = "select * from users where id=?';"
+			this.db.query(sql,[data.id],cb);
 		}
 		,parents:function(data,cb){
-			var sql = "select * from parents where ;";
+			var sql = "select * from users u inner join parents_to_kids p on(p.parents_id=u.id) where p.kids_id=?;";
+			this.db.query(sql,[data.id],cb);
+		}
+		,kids:function(data,cb){
+			var sql = "select * from users u inner join parents_to_kids p on(p.kids_id=u.id) where p.parents_id=?;";
+			this.db.query(sql,[data.id],cb);
 		}
 		,job:function(data,cb){
-			var sql = "select * from jobs where id='"+parseInt(data.id)+"';";
+			var sql = "select * from jobs where id=?;";
+			this.db.query(sql,[data.id],cb);
 		}
-		,jobs:function(data,cb){
-			var sql = "select * from jobs where ;";
+		,kidsJobs:function(data,cb){
+			var params = [data.id]
+			,sql = "select j.* from jobs j inner join parent_to_kids p on(p.parents_id=j.parents_id) where p.kids_id=?";
+			if(data.approved) {
+				params.push(data.approved?1:0);
+				sql += " approved=?";
+			}
+			this.db.query(sql,[data.id],cb);
+			
 		}
 		,parentsToKid:function(data,cb){
 			var sql = "select * from parents_to_kids where id='"+parseInt(data.id)+"';";
 		}
 		,parentsToKids:function(data,cb){
-			var sql = "select * from parents_to_kids where ;";
+			var field = data.field||'parents_id'
+			,id = parseInt(data.id)
+			,sql = "select * from parents_to_kids where "+field+";";
 		}
 		,mark:function(data,cb){
 			var sql = "select * from marks where id='"+parseInt(data.id)+"';";
@@ -49,18 +63,36 @@ var api = {
 		}
 	}
 	,write:{
-		kid:function(data,cb){
-			var sql
-			,nameValid = (data.name && (data.name+'').trim().length);
-			
+		user:function(data,cb){
+			var sql;
+
 			if(data.id) {
-				if(nameValid){
-					sql = "update kids set `name`='"+this.db.escape((data.name||'').trim())+"' where id='"+parseInt(data.id)+"'";
-					this.db.query(sql,function(err,data){
-						cb(err,true);
-					});
-				} else {
-					cb(new UpdateError('name required'),false);
+				fields = [],params = [],errors = [];
+				if(data.name) {
+					if(valid.name(data.name)) {
+						up.push('`name`=?');
+						params.push(data.name);
+					} else {
+						errors.push(new UpdateError(' name'));
+					}
+				}
+				
+				if(data.name) {
+					if(valid.name(data.name)) {
+						up.push('`name`=?');
+						params.push(data.name);
+					} else {
+						errors.push(new UpdateError('error updating name'));
+					}
+				}
+				
+				var doUpdate = function(){
+					if(set.length){
+						sql = "update users set `name`=? where id=?";
+						this.db.query(sql,[(data.name||'').trim(),data.id],function(err,data){
+							cb(err,true);
+						});
+					}
 				}
 			} else {
 				if(nameValid) {
@@ -77,7 +109,7 @@ var api = {
 			
 		}
 		,job:function(){
-			
+			mask
 		}
 		,parentsToKid:function(){
 			
@@ -122,5 +154,16 @@ UpdateError.prototype = new Error();
 
 function InsertError(){Error.call(this,arguments);}
 InsertError.prototype = new Error();
+
+//todo
+function QueryProxy() {
+  if (!(this instanceof Client) || arguments.length) {
+    throw new Error('deprecated: use mysql.createClient() instead');
+  }
+  EventEmitter.call(this);
+  
+};
+util.inherits(QueryProxy, EventEmitter);
+
 
 module.exports = api;

@@ -1,0 +1,38 @@
+{
+    "name" : "goodmarks",
+    "version" : "0.0.1",
+    "description" : "an application to track 'goodmarks'. the intention is tracking units of work done by young humans so their contribution or lack thereof can be properly rewarded or handled",
+    "main" : "server.js",
+    "directories" : {
+        "lib" : ".",
+        "example" : "example",
+        "test" : "test"
+    },
+    "repository" : {
+        "type" : "git",
+        "url" : "http://github.com/soldair/goodmarks.git"
+    },
+    "keywords" : [
+        "kids",
+        "tracker",
+	"chores"
+    ],
+    "author" : {
+        "name" : "Ryan Day",
+        "email" : "soldair@gmail.com",
+        "url" : "http://github.com/soldair"
+    },
+    "dependencies":{
+	"express":"2.4.x",
+	"mysql":"0.9.x",
+	"hashlib":"1.0.x",
+	"nconf":"0.4.x",
+	"async":"0.1.x"
+    },
+    "devDependencies":{
+	"expresso":"0.9.x",
+	"should":"0.3.x"
+    },
+    "license" : "MIT/X11",
+    "engine" : { "node" : ">=0.4" }
+}

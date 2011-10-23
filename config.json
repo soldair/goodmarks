@@ -1,0 +1,14 @@
+{
+  "persistance":"mysql"
+  ,"mysql":{
+	"name":"goodmarks"
+	,"password":""
+	,"user":"root"
+	,"host":"127.0.0.1"
+  }
+  ,"session":"memory"
+  ,"memcache":{
+	"host":"127.0.0.1"
+	,"port":"11211"
+  }
+}
