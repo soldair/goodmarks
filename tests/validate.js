@@ -51,8 +51,17 @@ module.exports  = {
 		});
 	}
 	,validPass:function(){
-		//valid.password('aaaaaa').should.be.true;
-		//valid.password('12345').should.be.false;
-		//valid.password('').should.be.false;
+		valid.password('aaaaaa',function(err,pass){
+			(!err).should.be.true;
+			pass.should.eql('aaaaaa')
+		});
+		valid.password('12345',function(err,pass){
+			(!err).should.be.false;
+			err.code.should.eql('passwordShort');
+		});
+		valid.password('',function(err,pass){
+			(!err).should.be.false;
+			err.code.should.eql('passwordEmpty');
+		});
 	}
 };

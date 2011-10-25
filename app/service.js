@@ -67,6 +67,21 @@ var api = {
 			var sql;
 
 			if(data.id) {
+				var validations = [];
+				if(data.email) {
+					validations.push(function(){valid.email(data.email,cb)});
+				}
+				if(data.name){
+					validations.push(function(cb){valid.name(data.name,cb)});
+				}
+				if(data.password){
+					validations.push(function(cb){valid.password(data.password,cb)});
+				}
+
+				async.parallel(validations,function(err,data){
+					
+				});
+
 				fields = [],params = [],errors = [];
 				if(data.name) {
 					if(valid.name(data.name)) {
@@ -77,8 +92,9 @@ var api = {
 					}
 				}
 				
-				if(data.name) {
-					if(valid.name(data.name)) {
+				if(data.email) {
+
+					if() {
 						up.push('`name`=?');
 						params.push(data.name);
 					} else {
