@@ -1,6 +1,6 @@
 var util = require('util')
 ,EventEmitter = require('events').EventEmitter
-,valid = require(__dirname+'/../lib/validate.js');
+,valid = require(__dirname+'/../lib/validate.js')
 ,async = require('async');
 
 var api = {
@@ -69,7 +69,7 @@ var api = {
 			if(data.id) {
 				var validations = [];
 				if(data.email) {
-					validations.push(function(){valid.email(data.email,cb)});
+					validations.push(function(cb){valid.email(data.email,cb)});
 				}
 				if(data.name){
 					validations.push(function(cb){valid.name(data.name,cb)});
@@ -79,37 +79,20 @@ var api = {
 				}
 
 				async.parallel(validations,function(err,data){
+
+					console.log(arguments);
+					console.log(this);
 					
+					var doUpdate = function(){
+						if(set.length){
+							sql = "update users set `name`=? where id=?";
+							this.db.query(sql,[(data.name||'').trim(),data.id],function(err,data){
+								cb(err,true);
+							});
+						}
+					}
 				});
-
-				fields = [],params = [],errors = [];
-				if(data.name) {
-					if(valid.name(data.name)) {
-						up.push('`name`=?');
-						params.push(data.name);
-					} else {
-						errors.push(new UpdateError(' name'));
-					}
-				}
-				
-				if(data.email) {
-
-					if() {
-						up.push('`name`=?');
-						params.push(data.name);
-					} else {
-						errors.push(new UpdateError('error updating name'));
-					}
-				}
-				
-				var doUpdate = function(){
-					if(set.length){
-						sql = "update users set `name`=? where id=?";
-						this.db.query(sql,[(data.name||'').trim(),data.id],function(err,data){
-							cb(err,true);
-						});
-					}
-				}
+					
 			} else {
 				if(nameValid) {
 					sql = "insert into kids(`name`) values('"+this.db.escape((data.name||'').trim())+"');";
@@ -125,7 +108,7 @@ var api = {
 			
 		}
 		,job:function(){
-			mask
+			//mask
 		}
 		,parentsToKid:function(){
 			
@@ -171,7 +154,7 @@ UpdateError.prototype = new Error();
 function InsertError(){Error.call(this,arguments);}
 InsertError.prototype = new Error();
 
-//todo
+//TODO
 function QueryProxy() {
   if (!(this instanceof Client) || arguments.length) {
     throw new Error('deprecated: use mysql.createClient() instead');
