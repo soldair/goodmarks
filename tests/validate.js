@@ -1,4 +1,3 @@
-if(process.env.EXPRESSO_TEST_PATH) require.paths.unshift(process.env.EXPRESSO_TEST_PATH);
 
 var valid = require('lib/validate.js')
 ,should = require('should');

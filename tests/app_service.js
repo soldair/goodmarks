@@ -1,4 +1,3 @@
-if(process.env.EXPRESSO_TEST_PATH) require.paths.unshift(process.env.EXPRESSO_TEST_PATH);
 
 var api = require('app/service.js')
 ,should = require('should');

@@ -1,7 +1,9 @@
 var util = require('util')
+,libPath = __dirname+'/../lib' 
 ,EventEmitter = require('events').EventEmitter
-,valid = require(__dirname+'/../lib/validate.js')
-,async = require('async');
+,valid = require(libPath+'/validate.js')
+,sqlutil = require(libPath+'/sql.js')
+,_u = require(libPath+'/util.js');
 
 var api = {
 	db:false,
@@ -67,41 +69,48 @@ var api = {
 			var sql;
 
 			if(data.id) {
-				var validations = [];
-				if(data.email) {
-					validations.push(function(cb){valid.email(data.email,cb)});
-				}
-				if(data.name){
-					validations.push(function(cb){valid.name(data.name,cb)});
-				}
-				if(data.password){
-					validations.push(function(cb){valid.password(data.password,cb)});
-				}
 
-				async.parallel(validations,function(err,data){
+				var toValidate = {};
+				if(data.password) toValidate.password = data.password;
+				if(data.name) toValidate.name = data.name;
+				if(data.email) toValidate.email = data.email;
 
-					console.log(arguments);
-					console.log(this);
-					
-					var doUpdate = function(){
-						if(set.length){
-							sql = "update users set `name`=? where id=?";
-							this.db.query(sql,[(data.name||'').trim(),data.id],function(err,data){
-								cb(err,true);
-							});
+				valid.validate(toValidate,function(errors,validData){
+					delete validData.id;
+					//data is cleaned and/or cast in validation
+					if(!errors){
+						if(validData.assword) {
+							validData.password = _u.encodePassword(validData.password);
 						}
+						
+						var update = sqlutil.updateValues(data)
+						,sql = "update users set "+update.set+" where id=?";
+						update.values.push(+data.id);
+						
+						this.db.query(sql,update.values,function(err,data){
+							cb(err,true);
+						});
+					} else {
+						//send errors to caller;
+						cb(errors,null);
 					}
 				});
-					
+
+
 			} else {
-				if(nameValid) {
-					sql = "insert into kids(`name`) values('"+this.db.escape((data.name||'').trim())+"');";
-					this.db.query(sql,function(err,data){
+
+				valid.validate({
+					name:data.name
+					,email:data.email
+					,password:data.password
+				},function(errors,validData){
+					var vs = sqlutil.values(validData);
+					sql = "insert into users("+sqlutil.fields(validData)+") values("+vs.set+");";
+					this.db.query(sql,vs.values,function(err,data){
+						//TODO handle duplicate key messaging etc.
 						cb(err,data.insertId);
 					});
-				} else {
-					cb(new InsertError('name required'),false);
-				}
+				});
 			}
 		}
 		,parent:function(){

@@ -1,7 +1,7 @@
 {
     "name" : "goodmarks",
     "version" : "0.0.1",
-    "description" : "an application to track 'goodmarks'. the intention is tracking units of work done by young humans so their contribution or lack thereof can be properly rewarded or handled",
+    "description" : "An application to track 'goodmarks'. The intention is tracking units of work done by young humans so their contribution or lack thereof can be properly rewarded or handled",
     "main" : "server.js",
     "directories" : {
         "lib" : ".",
@@ -23,7 +23,7 @@
         "url" : "http://github.com/soldair"
     },
     "dependencies":{
-	"express":"2.4.x",
+	"express":"2.5.x",
 	"mysql":"0.9.x",
 	"hashlib":"1.0.x",
 	"nconf":"0.4.x",
@@ -34,5 +34,5 @@
 	"should":"0.3.x"
     },
     "license" : "MIT/X11",
-    "engine" : { "node" : ">=0.4" }
+    "engine" : { "node" : ">=0.5" }
 }

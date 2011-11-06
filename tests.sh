@@ -3,17 +3,22 @@ if [ "$1" == "-c" ]
 then
 	rm -f lib/*~
 	rm -f app/*~
-	export EXPRESSO_TEST_PATH=`pwd`/coverage
+
+	EXPRESSO_TEST_PATH=`pwd`/coverage
 	mkdir -p $EXPRESSO_TEST_PATH
+	export NODE_PATH=$NODE_PATH:$EXPRESSO_TEST_PATH
+
 	# i dont know what happened but for some reson expresso stoped unshifting -I or --include onto require.paths
 	node-jscoverage lib coverage/lib
 	node-jscoverage app coverage/app
 	expresso -I coverage -c tests/* $2
+
 	export pass=$?
 	rm -fr $EXPRESSO_TEST_PATH
 	exit $pass
 else
-	export EXPRESSO_TEST_PATH=`pwd`
+	EXPRESSO_TEST_PATH=`pwd`
+	export NODE_PATH=$NODE_PATH:$EXPRESSO_TEST_PATH
 	expresso -I lib tests/*
 	exit
 fi
