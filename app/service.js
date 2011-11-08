@@ -3,29 +3,31 @@ var util = require('util')
 ,EventEmitter = require('events').EventEmitter
 ,valid = require(libPath+'/validate.js')
 ,sqlutil = require(libPath+'/sql.js')
-,_u = require(libPath+'/util.js');
+,_u = require(libPath+'/_u.js');
 
-var api = {
+var api;
+api = {
 	db:false,
 	init:function(db){
 		this.db = db;
+		console.log('db: ',db);
 	},
 	get:{
 		user:function(data,cb){
 			var sql = "select * from users where id=?';"
-			this.db.query(sql,[data.id],cb);
+			api.db.query(sql,[data.id],cb);
 		}
 		,parents:function(data,cb){
 			var sql = "select * from users u inner join parents_to_kids p on(p.parents_id=u.id) where p.kids_id=?;";
-			this.db.query(sql,[data.id],cb);
+			api.db.query(sql,[data.id],cb);
 		}
 		,kids:function(data,cb){
 			var sql = "select * from users u inner join parents_to_kids p on(p.kids_id=u.id) where p.parents_id=?;";
-			this.db.query(sql,[data.id],cb);
+			api.db.query(sql,[data.id],cb);
 		}
 		,job:function(data,cb){
 			var sql = "select * from jobs where id=?;";
-			this.db.query(sql,[data.id],cb);
+			api.db.query(sql,[data.id],cb);
 		}
 		,kidsJobs:function(data,cb){
 			var params = [data.id]
@@ -34,7 +36,7 @@ var api = {
 				params.push(data.approved?1:0);
 				sql += " approved=?";
 			}
-			this.db.query(sql,[data.id],cb);
+			api.db.query(sql,[data.id],cb);
 			
 		}
 		,parentsToKid:function(data,cb){
@@ -87,7 +89,7 @@ var api = {
 						,sql = "update users set "+update.set+" where id=?";
 						update.values.push(+data.id);
 						
-						this.db.query(sql,update.values,function(err,data){
+						api.db.query(sql,update.values,function(err,data){
 							cb(err,true);
 						});
 					} else {
@@ -96,7 +98,6 @@ var api = {
 					}
 				});
 
-
 			} else {
 
 				valid.validate({
@@ -104,11 +105,16 @@ var api = {
 					,email:data.email
 					,password:data.password
 				},function(errors,validData){
-					var vs = sqlutil.values(validData);
-					sql = "insert into users("+sqlutil.fields(validData)+") values("+vs.set+");";
-					this.db.query(sql,vs.values,function(err,data){
+					
+					var vs = sqlutil.values(validData)
+					,sql = "insert into users("+sqlutil.fields(validData)+") values("+vs.set+");";
+					
+					//console.log('api object: ',api);
+					
+					api.db.query(sql,vs.values,function(err,data){
+						console.log('query came back',data,err);
 						//TODO handle duplicate key messaging etc.
-						cb(err,data.insertId);
+						cb(err,data?data.insertId:data);
 					});
 				});
 			}

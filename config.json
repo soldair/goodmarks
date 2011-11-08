@@ -1,7 +1,7 @@
 {
   "persistance":"mysql"
   ,"mysql":{
-	"name":"goodmarks"
+	"database":"goodmarks"
 	,"password":""
 	,"user":"root"
 	,"host":"127.0.0.1"

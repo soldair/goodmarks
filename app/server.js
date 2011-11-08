@@ -1,26 +1,29 @@
 
 var express = require('express')
 ,mysql = require('mysql')
-,fs = require('fs');
+,fs = require('fs')
+,_ = require('underscore')
 , server = {
 	express:null,
 	app:null,
 	config:{},
+	db:null,
 	init:function(){
 		this.app = express.createServer();
 		this.setConfig();
 		this.logger();
+		this.prepareDB();
 		this.routes();
 		this.prepare();
 		this.listen();
 	},
 	setConfig:function(){
 		//config
-		var nconf = require('nconf');
-		nconf.argv = nconf.env = true;
-		nconf.use('file',{file:__dirname+'/config.json'});
-		nconf.use('file',{file:__dirname+'/config.user.json'});
-		this.config = nconf;
+		var base = require(__dirname+'/../config.json')
+		,user = require(__dirname+'/../config.user.json');
+		
+		this.config = _.extend(base,user);
+
 	},
 	logger:function(){
 		var logDir = config.logDir || __dirname+'/logs'
@@ -29,6 +32,16 @@ var express = require('express')
 		
 		//TODO: add sighup rotator for logs. fake writeableStream?
 		self.app.use(express.logger({format:'default',stream:logPath?fs.createWriteStream(logPath, {flags:'a',encoding:'UTF-8'}):process.stdout}));
+	},
+	prepareDB:function(){
+		console.log(this.config.mysql);
+		
+		this.db = mysql.createClient({
+			user: this.config.mysql.user,
+			password: this.config.mysql.password,
+			name: this.config.mysql.name,
+			host: this.config.mysql.host
+		});
 	},
 	routes:function(){
 		var self = this;

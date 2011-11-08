@@ -26,8 +26,7 @@
 	"express":"2.5.x",
 	"mysql":"0.9.x",
 	"hashlib":"1.0.x",
-	"nconf":"0.4.x",
-	"async":"0.1.x"
+	"underscore":"1.2.x"
     },
     "devDependencies":{
 	"expresso":"0.9.x",
