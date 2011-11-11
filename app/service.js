@@ -3,31 +3,37 @@ var util = require('util')
 ,EventEmitter = require('events').EventEmitter
 ,valid = require(libPath+'/validate.js')
 ,sqlutil = require(libPath+'/sql.js')
-,_u = require(libPath+'/_u.js');
+,_u = require(libPath+'/_u.js')
+,dbConstants=require('mysql/lib/constants');
 
-var api;
-api = {
-	db:false,
+function API(db){
+	this.init();
+}
+
+API.prototype = {
 	init:function(db){
 		this.db = db;
-		console.log('db: ',db);
+		this.get.db = db;
+		this.write.db = db;
 	},
+	
 	get:{
-		user:function(data,cb){
+		db:false
+		,user:function(data,cb){
 			var sql = "select * from users where id=?';"
-			api.db.query(sql,[data.id],cb);
+			this.db.query(sql,[data.id],cb);
 		}
 		,parents:function(data,cb){
 			var sql = "select * from users u inner join parents_to_kids p on(p.parents_id=u.id) where p.kids_id=?;";
-			api.db.query(sql,[data.id],cb);
+			this.db.query(sql,[data.id],cb);
 		}
 		,kids:function(data,cb){
 			var sql = "select * from users u inner join parents_to_kids p on(p.kids_id=u.id) where p.parents_id=?;";
-			api.db.query(sql,[data.id],cb);
+			this.db.query(sql,[data.id],cb);
 		}
 		,job:function(data,cb){
 			var sql = "select * from jobs where id=?;";
-			api.db.query(sql,[data.id],cb);
+			this.db.query(sql,[data.id],cb);
 		}
 		,kidsJobs:function(data,cb){
 			var params = [data.id]
@@ -36,7 +42,7 @@ api = {
 				params.push(data.approved?1:0);
 				sql += " approved=?";
 			}
-			api.db.query(sql,[data.id],cb);
+			this.db.query(sql,[data.id],cb);
 			
 		}
 		,parentsToKid:function(data,cb){
@@ -67,8 +73,9 @@ api = {
 		}
 	}
 	,write:{
-		user:function(data,cb){
-			var sql;
+		db:false
+		,user:function(data,cb){
+			var sql,z=this;
 
 			if(data.id) {
 
@@ -89,7 +96,7 @@ api = {
 						,sql = "update users set "+update.set+" where id=?";
 						update.values.push(+data.id);
 						
-						api.db.query(sql,update.values,function(err,data){
+						z.db.query(sql,update.values,function(err,data){
 							cb(err,true);
 						});
 					} else {
@@ -109,9 +116,7 @@ api = {
 					var vs = sqlutil.values(validData)
 					,sql = "insert into users("+sqlutil.fields(validData)+") values("+vs.set+");";
 					
-					//console.log('api object: ',api);
-					
-					api.db.query(sql,vs.values,function(err,data){
+					z.db.query(sql,vs.values,function(err,data){
 						console.log('query came back',data,err);
 						//TODO handle duplicate key messaging etc.
 						cb(err,data?data.insertId:data);
@@ -139,7 +144,8 @@ api = {
 		}
 	}
 	,delete:{
-		kid:function(data,cb){
+		db:false
+		,kid:function(data,cb){
 
 		}
 		,parent:function(){
@@ -160,6 +166,13 @@ api = {
 		,forkedJob:function(){
 			
 		}
+	},
+	end:function(){
+		this.db.end();
+		this.db = null;
+		this.get.db = null
+		this.write.db = null
+		this.delete.db = null
 	}
 }
 
@@ -180,4 +193,4 @@ function QueryProxy() {
 util.inherits(QueryProxy, EventEmitter);
 
 
-module.exports = api;
+module.exports = API;
