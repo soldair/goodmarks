@@ -17,9 +17,6 @@ module.exports = {
 		_u.each({a:1,b:2},function(k,v){
 			var t = tests.shift();
 			
-			//(!!k).should.be.true;
-			//(!!v).should.be.true;
-			
 			(typeof t).should.eql('function');
 			
 			t(k,v);

@@ -4,9 +4,8 @@ var sql = require('lib/sql.js')
 module.exports = {
 	'test updateValues':function(){
 		var val = sql.updateValues({a:1,b:2});
-
-		console.log(val);
-		
+		val.set.should.eql("`a`=?,`b`=?");
+		val.values.should.eql([1,2]);
 	},
 	'test values':function(){
 		
