@@ -21,7 +21,7 @@ API.prototype = {
 		return {
 			_parent:parent
 			,user:function(data,cb){
-				var sql = "select * from users where id=?;"
+				var sql = "select u.*,group_concat(r.name) from users u left join roles_names r on(u.perms & r.mask) where u.id=? group by u.id;"
 				parent.db.query(sql,[data.id],function(err,data){
 					if(err) {
 						cb(err,data);
@@ -57,7 +57,7 @@ API.prototype = {
 			,parentsToKids:function(data,cb){
 				var field = data.field||'parents_id'
 				,id = parseInt(data.id)
-				,sql = "select * from parents_to_kids where "+field+";";
+				,sql = "select * from parents_to_kids where `"+field+"`=?;";
 			}
 			,mark:function(data,cb){
 				var sql = "select * from marks where id='"+parseInt(data.id)+"';";
@@ -77,6 +77,38 @@ API.prototype = {
 			,forkedJobs:function(data,cb){
 				var sql = "select * from forked_jobs where ;";
 			}
+			,rolesName:function(data,cb){
+				var values = []
+				,where='';
+				
+				if(data.id) {
+					where ='`id`=?';
+					values.push(data.id);
+				} else if(data.name){
+					where ='`name`=?';
+					values.push(data.name);
+				}
+				
+				if(where == ''){
+					cb(new SelectError('could not find valid fields to filter roles_names.'),null);
+					return;
+				}
+				
+				parent.db.query("select * from roles_names where "+where+" limit 1",values,function(err,data){
+					if(!err){
+						cb(null,data[0]);
+					} else {
+						cb(err,null);
+					}
+				});
+			}
+			,rolesNames:function(data,cb){
+				var sql = "select * from roles_names";
+				parent.db.query(sql,function(err,data){
+					cb(err,data);
+				});
+			}
+			
 		};
 	}
 	,initWrite:function(parent){
@@ -138,14 +170,72 @@ API.prototype = {
 						}
 					});
 				}
+			},
+			grantUserRole:function(data,cb){
+
+				valid.validate({
+					id:data.id
+					,role:{
+						errors:{
+							roleInvalid:{
+								en:'the user role is invalid'
+							}
+						},
+						valid:function(role,cb){
+							role = role+''.replace(/[^a-z]/g,'');
+							parent.get.rolesName({name:role},function fn(error,data){
+								if(!error){
+									if(data.id){
+										role = data.name
+										cb(false,role);
+										return;
+									}
+								}
+								
+								cb(new fn.validationError('roleInvalid'),null);
+							})
+						},
+						value:data.role
+					}
+				},function(errors,validData){
+					var values = [validData.role,validData.id]
+					,sql = "update users set perms=perms | (select mask from roles_names where name=?) where id=?;"
+					
+					parent.db.query(sql,values,function(err,data){
+						cb(err,data);
+					})
+				});
 			}
-			,parent:function(){
-				
+			,parentsToKids:function(data,cb){
+
+				valid.validate({
+					parents_id:{
+						valid:'id'
+						,value:data.parents_id
+					}
+					,kids_id:{
+						valid:'id'
+						,value:data.kids_id
+					}
+				},function(errors,validData){
+					//has approved record in kid requests?
+
+					//is a parent?: select * from users u inner join roles_names r on(r.name='parent' && u.perms & r.mask);
+					//set parent: update users set perms=perms | (select mask from roles_names where name='parent') where id=10;
+					//get all roles: select name from roles_names where (select perms from users where id=10) & mask;
+					
+					var vs = sqlutil.values(validData)
+					,sql = "insert into parents_to_kids("+sqlutil.fields(validData)+") values("+vs.set+") on duplicate key update `id`=`id`;";
+					
+					parent.db.query(sql,function(err,data){
+						cb(err,data?data.insertId:id);
+					});
+				});
 			}
 			,job:function(){
 				//mask
 			}
-			,parentsToKid:function(){
+			,parents:function(){
 				
 			}
 			,mark:function(){
@@ -161,11 +251,13 @@ API.prototype = {
 	}
 	,initDelete:function(parent){
 		return {
-			kid:function(data,cb){
-
-			}
-			,parent:function(){
-				
+			user:function(data,cb){
+				valid.validate({id:data.id},function(errors,validData){
+					var sql = "delete from users where id=?;"
+					parent.db.query(sql,[validData.id],function(err,data){
+						cb(err,data);
+					});
+				});
 			}
 			,job:function(){
 				
@@ -195,6 +287,9 @@ UpdateError.prototype = new Error();
 
 function InsertError(){Error.call(this,arguments);}
 InsertError.prototype = new Error();
+
+function SelectError(){Error.call(this,arguments);}
+SelectError.prototype = new Error();
 
 //TODO
 function QueryProxy() {

@@ -2,6 +2,7 @@
 var API = require('app/service.js')
 ,server = require('app/server.js')
 ,mysql = require('mysql')
+,mysql_constants = require('mysql/lib/constants')
 ,should = require('should');
 
 server.setConfig();
@@ -45,18 +46,29 @@ module.exports = {
 	"test crud user":function(beforeExit){
 		var z = this
 		,api = new API(getDb())
-		,id;
+		,id,email=Date.now()+'lalal@lllll.fake';
 		
 		var tests = [
 			function(){
-				api.write.user({name:'joetest',email:Date.now()+'lalal@lllll.fake',password:'aaaaaa'},function(err,data){
+				//create test
+				api.write.user({name:'joetest',email:email,password:'aaaaaa'},function(err,data){
 					(err||false).should.be.false;
 					id=data;
-					(+id > 0).should.be.true;
+					(id > 0).should.be.true;
 					done();
 				});
 			},
 			function(){
+				//email key constraint test
+				api.write.user({name:'duplicate key test',email:email,password:'aaaaaa'},function(err,data){
+					(err||false).should.be.ok;
+					(mysql_constants.ERROR_DUP_ENTRY == err.number).should.be.true;
+					
+					done();
+				});
+			},
+			function(){
+				//update user
 				api.write.user({id:id,name:'pandaquest'},function(err,data){
 					(err||false).should.be.false;
 					done();
@@ -67,6 +79,19 @@ module.exports = {
 					(err||false).should.be.false;
 					data.id.should.eql(id);
 					data.password.length.should.eql(45);
+					done();
+				});
+			},
+			function(){
+				api.delete.user({id:id},function(err,data){
+					(err||false).should.be.false;
+					done();
+				});
+			},
+			function(){
+				api.get.user({id:id},function(err,data){
+					(err||false).should.be.false;
+					(data||false).should.be.false;
 					done();
 				});
 			}
@@ -80,9 +105,6 @@ module.exports = {
 		};
 		done();
 	}/*,
-	"test update user":function(beforeExit){
-		//(false).should.be.true;
-	},
 	"test login":function(beforeExit){
 		//(false).should.be.true;
 	}*/
