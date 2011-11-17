@@ -104,8 +104,72 @@ module.exports = {
 			api.end();
 		};
 		done();
-	}/*,
-	"test login":function(beforeExit){
+	},
+	"test get roles names":function(){
+		var z = this
+		,api = new API(getDb());
+		
+		api.get.rolesName({name:'parent'},function fn(err,data){
+			(err||false).should.be.false;
+			data.id.should.be.above(0);
+			api.end();
+		});
+	},
+	"test grant user role":function(){
+		var z = this
+		,api = new API(getDb())
+		,id,email=Date.now()+Math.random()+'@lllll.fake';
+		
 		//(false).should.be.true;
-	}*/
+		var tests = [
+			//prepare: create user
+			function(){
+				//create user
+				api.write.user({name:'joetest',email:email,password:'aaaaaa'},function(err,data){
+					(err||false).should.be.false;
+					id=data;
+					(id > 0).should.be.true;
+					done();
+				});
+			},
+			//select user. check roles
+			function(){
+				api.get.user({id:id},function(err,data){
+					//user created with no role should not have role
+					(err||false).should.be.false;
+					(data.email||'').length.should.be.eql(email.length);
+					(data.roles||'').length.should.be.eql(0);
+					done();
+				});
+			},
+			//grant user role
+			function(){
+				api.write.grantUserRole({id:id,role:'parent'},function(err,data){
+					//user created with no role should not have role
+					(err||false).should.be.false;
+					data.affectedRows.should.be.eql(1);
+					done();
+				});
+			},
+			//select user with role result
+			function(){
+				api.get.user({id:id},function(err,data){
+					//user created with no role should not have role
+					(err||false).should.be.false;
+					(data.email||'').length.should.be.eql(email.length);
+					(data.roles||'').should.be.eql('parent');
+
+					done();
+				});
+			},
+		], done = function(){
+			if(tests.length) {
+				cb = tests.shift();
+				cb();
+				return;
+			}
+			api.end();
+		};
+		done();
+	}
 };

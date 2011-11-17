@@ -21,7 +21,7 @@ API.prototype = {
 		return {
 			_parent:parent
 			,user:function(data,cb){
-				var sql = "select u.*,group_concat(r.name) from users u left join roles_names r on(u.perms & r.mask) where u.id=? group by u.id;"
+				var sql = "select u.*,group_concat(r.name) as roles from users u left join roles_names r on(u.perms & r.mask) where u.id=? group by u.id;"
 				parent.db.query(sql,[data.id],function(err,data){
 					if(err) {
 						cb(err,data);
@@ -84,8 +84,10 @@ API.prototype = {
 				if(data.id) {
 					where ='`id`=?';
 					values.push(data.id);
-				} else if(data.name){
-					where ='`name`=?';
+				}
+				
+				if(data.name){
+					where = (where?where+' and ':'')+'`name`=?';
 					values.push(data.name);
 				}
 				
@@ -181,19 +183,24 @@ API.prototype = {
 								en:'the user role is invalid'
 							}
 						},
-						valid:function(role,cb){
-							role = role+''.replace(/[^a-z]/g,'');
-							parent.get.rolesName({name:role},function fn(error,data){
-								if(!error){
-									if(data.id){
-										role = data.name
-										cb(false,role);
-										return;
+						valid:function fn(role,cb){
+							if(role) {
+								role = role+''.replace(/[^a-zA-Z]/g,'');
+
+								parent.get.rolesName({name:role},function(error,data){
+									if(!error){
+										if(data.id){
+											role = data.name
+											cb(false,role);
+											return;
+										}
 									}
-								}
-								
-								cb(new fn.validationError('roleInvalid'),null);
-							})
+									
+									cb(new fn.ValidationError('roleInvalid'),null);
+								});
+							} else {
+								cb(new fn.ValidationError('roleInvalid'),null);
+							}
 						},
 						value:data.role
 					}
