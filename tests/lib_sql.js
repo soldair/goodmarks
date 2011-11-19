@@ -34,7 +34,7 @@ module.exports = {
 		o.params.length.should.eql(1);
 		o.sql.should.eql('select * from `test` order by `created` DESC,`id` ASC limit ?');
 	},
-	'test select config filters':function(){
+	'test select config filters negative':function(){
 		try{
 			var o = sql.select('test',{filter:[{field:'pandas',value:1}]},{filterable:{id:true}});
 		} catch(e){
@@ -46,5 +46,43 @@ module.exports = {
 			return;
 		}
 		('should have caught bad filter field exception').should.be.true;
+	},
+	'test select config filters positive':function(){
+		try{
+			var o = sql.select('test',{filter:[{field:'id',value:1}]},{filterable:{id:true}});
+		} catch(e){
+			('should not have caught bad filter field exception').should.be.true;
+			return;
+		}
+		o.sql.should.be.eql('select * from `test` where `id` = ? limit ?');
+	},
+	'test select config sort negative':function(){
+		try{
+			var o = sql.select('test',{sort:{tacos:false}},{sortable:{id:true}});
+		} catch(e){
+			e.length.should.eql(1);
+			
+			(e[0] instanceof sql.SQLUtilError).should.be.true;
+			e[0].message.indexOf('tacos').should.be.above(-1);
+			return;
+		}
+		('should have caught bad sort field exception').should.be.true;
+	},
+	'test select config sort positive':function(){
+		try{
+			var o = sql.select('test',{sort:{id:false}},{filterable:{id:true}});
+		} catch(e){
+			('should not have caught bad filter field exception').should.be.true;
+			return;
+		}
+		o.sql.should.be.eql('select * from `test` order by `id` ASC limit ?');
+	},
+	'test select no limit':function(){
+		var o = sql.select('test',{limit:-1});
+		o.sql.should.eql("select * from `test`");
+	},
+	'test select shorthand filters':function(){
+		//var o = sql.select('test',{a:1});
+		//o.sql.should.eql("select * from `test` where `a` = ? limit ?");
 	}
 }
