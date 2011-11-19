@@ -31,11 +31,11 @@ API.prototype = {
 				});
 			}
 			,parents:function(data,cb){
-				var sql = "select * from users u inner join parents_to_kids p on(p.parents_id=u.id) where p.kids_id=?;";
+				var sql = "select * from users u inner join parents_to_kids p on(p.parents_id=u.id) where p.kids_id=? order by p.id desc;";
 				parent.db.query(sql,[data.id],cb);
 			}
 			,kids:function(data,cb){
-				var sql = "select * from users u inner join parents_to_kids p on(p.kids_id=u.id) where p.parents_id=?;";
+				var sql = "select * from users u inner join parents_to_kids p on(p.kids_id=u.id) where p.parents_id=? order by p.id desc;";
 				parent.db.query(sql,[data.id],cb);
 			}
 			,job:function(data,cb){
@@ -51,22 +51,52 @@ API.prototype = {
 				}
 				parent.db.query(sql,[data.id],cb);
 			}
-			,parentsToKid:function(data,cb){
-				var sql = "select * from parents_to_kids where id='"+parseInt(data.id)+"';";
-			}
 			,parentsToKids:function(data,cb){
-				var field = data.field||'parents_id'
-				,id = parseInt(data.id)
-				,sql = "select * from parents_to_kids where `"+field+"`=?;";
-			}
-			,mark:function(data,cb){
-				var sql = "select * from marks where id='"+parseInt(data.id)+"';";
+				var obj;
+				try{
+					obj = sqlutil.select('parents_to_kids',data,{
+						filterable:{
+							id:true
+							,parents_id:true
+							,kids_id:true
+						}
+						,sortable:{
+							created:true
+						}
+					});
+				} catch (e){
+					process.nextTick(function(){
+						cb(e,null);
+					});
+					return;
+				}
+				
+				parent.db.query(obj.sql,obj.params,cb);
 			}
 			,marks:function(data,cb){
-				var sql = "select * from marks where ;";
-			}
-			,sticker:function(data,cb){
-				var sql = "select * from sticker where id='"+parseInt(data.id)+"';";
+				var obj;
+				try{
+					obj = sqlutil.select('marks',data,{
+						filterable:{
+							id:true
+							,kids_id:true
+							,jobs_id:true
+							,created:true
+							,good:true
+							,approved:true
+						}
+						,sortable:{
+							created:true
+						}
+					});
+				} catch (e){
+					process.nextTick(function(){
+						cb(e,null);
+					});
+					return;
+				}
+				
+				parent.db.query(obj.sql,obj.params,cb);;
 			}
 			,stickers:function(data,cb){
 				var sql = "select * from stickers where ;";
@@ -110,7 +140,6 @@ API.prototype = {
 					cb(err,data);
 				});
 			}
-			
 		};
 	}
 	,initWrite:function(parent){
