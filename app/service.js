@@ -269,19 +269,103 @@ API.prototype = {
 				});
 			}
 			,job:function(){
-				//mask
-			}
-			,parents:function(){
+				/* 
+				`title` varchar(150) NOT NULL,
+				`description` text NOT NULL,
+				`points` int(11) unsigned NOT NULL DEFAULT '1',
+				`parents_id` int(11) unsigned DEFAULT NULL,
+				`kids_id` int(11) unsigned DEFAULT NULL,
+				`public` tinyint(1) unsigned NOT NULL DEFAULT '0',
+				`approved` tinyint(1) unsigned NOT NULL DEFAULT '0',
+				 */
+				var sql,z=this;
+
+				if(data.id) {
+
+					var toValidate = {};
+					if(data.points) toValidate.points = {valid:'id',value:data.points};
+					if(data.parents_id) toValidate.parents_id = {valid:'id',value:data.parents_id};
+					if(data.kids_id) toValidate.kids_id = {valid:'id',value:data.kids_id};
+					if(data.description) toValidate.description = {valid:'text',value:data.description};
+					
+					if(_u.undef != data.public) toValidate.public = {valid:'intBool',value:data.public}; 
+					if(_u.undef != data.approved) toValidate.approved = {valid:'intBool',value:data.approved};
+					
+					valid.validate(toValidate,function(errors,validData){
+						delete validData.id;
+						//data is cleaned and/or cast in validation
+						if(!errors){
+							//take all validated values from valid data 
+							
+							var update = sqlutil.updateValues(validData)
+							,sql = "update users set "+update.set+" where id=?";
+							update.values.push(+data.id);
+
+							parent.db.query(sql,update.values,function(err,data){
+								cb(err,data?validData.id:null);
+							});
+						} else {
+							//send errors to caller;
+							cb(errors,null);
+						}
+					});
+
+				} else {
+					throw "incomplete insert job";
+					/*
+					valid.validate({
+						name:data.name
+						,email:data.email
+						,password:data.password
+					},function(errors,validData){
+
+						if(validData.password) {
+							validData.password = _u.encodePassword(validData.password);
+						}
+						
+						if(!errors){
+							var vs = sqlutil.values(validData)
+							,sql = "insert into users("+sqlutil.fields(validData)+") values("+vs.set+");";
+							
+							parent.db.query(sql,vs.values,function(err,data){
+								//TODO handle duplicate key messaging etc.
+								cb(err,data?data.insertId:data);
+							});
+						} else {
+							//send errors to caller;
+							cb(errors,null);
+						}
+					});*/
+				}
 				
 			}
 			,mark:function(){
-				
+				/*
+				`id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+				`good` tinyint(1) NOT NULL DEFAULT '1',
+				`jobs_id` int(11) unsigned NOT NULL,
+				`kids_id` int(11) unsigned NOT NULL,
+				`stickers_id` int(11) unsigned DEFAULT NULL,
+				`created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				`approved` tinyint(1) NOT NULL DEFAULT '-1',
+				`note` varchar(150) NOT NULL DEFAULT '',
+				 */
 			}
 			,sticker:function(){
-				
+				/*
+				`id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+				`file` varchar(100) NOT NULL,
+				`public` tinyint(1) unsigned NOT NULL,
+				`kids_id` int(11) unsigned NOT NULL,
+				*/
 			}
 			,forkedJob:function(){
-				
+				/*
+				`id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+				`jobs_id` int(11) unsigned NOT NULL,
+				`parent_jobs_id` int(11) unsigned NOT NULL,
+				`created` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+				*/
 			}
 		};
 	}
