@@ -318,7 +318,7 @@ API.prototype = {
 						,description:{valid:'text',value:data.description||''}
 						,public:{valid:'intBool',value:data.public||1} 
 						,approved:{valid:'intBool',value:data.approved||1}
-						,title:{valid:'text',value:data.title}
+						,title:{valid:'notEmptyText',value:data.title}
 					};
 
 					valid.validate(
@@ -381,8 +381,13 @@ API.prototype = {
 					});
 				});
 			}
-			,job:function(){
-				
+			,job:function(data,cb){
+				valid.validate({id:data.id},function(errors,validData){
+					var sql = "delete from jobs where id=?;";
+					parent.db.query(sql,[validData.id],function(err,data){
+						cb(err,data);
+					});
+				});
 			}
 			,parentsToKid:function(){
 				

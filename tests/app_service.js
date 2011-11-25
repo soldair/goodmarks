@@ -162,6 +162,12 @@ module.exports = {
 					done();
 				});
 			},
+			function(){
+				api.delete.user({id:id},function(err,data){
+					(err||false).should.be.false;
+					done();
+				});
+			}
 		], done = function(){
 			if(tests.length) {
 				cb = tests.shift();
@@ -172,7 +178,29 @@ module.exports = {
 		};
 		done();
 	}
-	,"test cru- job":function(){
+	,"test create job no data":function(){
+		var z = this
+		,api = new API(getDb());
+		
+		api.write.job({},function(err,data){
+			api.end();
+
+			err.kids_id.code.should.eql('idInvalid'); 
+			err.parents_id.code.should.eql('idInvalid'); 
+			err.title.code.should.eql('mustBeText');
+		});
+	}
+	,"test create job empty title":function(){
+		var z = this
+		,api = new API(getDb());
+		
+		api.write.job({parents_id:1,kids_id:2,title:''},function(err,data){
+			api.end();
+ 
+			err.title.code.should.eql('notEmptyText');
+		});
+	}
+	,"test crud job":function(){
 		var z = this
 		,api = new API(getDb())
 		,id,title,desc;
@@ -219,6 +247,21 @@ module.exports = {
 					//user created with no role should not have role
 					(err||false).should.be.false;
 					(data.description).should.eql(desc);
+					
+					done();
+				});
+			}
+			,function(){
+				api.delete.job({id:id},function(err,data){
+					(err||false).should.be.false;
+					done();
+				});
+			}
+			,function(){
+				api.get.job({id:id},function(err,data){
+					//user created with no role should not have role
+					(err||false).should.be.false;
+					(data||false).should.be.false;
 					
 					done();
 				});
