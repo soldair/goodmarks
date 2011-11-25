@@ -172,4 +172,66 @@ module.exports = {
 		};
 		done();
 	}
+	,"test cru- job":function(){
+		var z = this
+		,api = new API(getDb())
+		,id,title,desc;
+		
+		//(false).should.be.true;
+		var tests = [
+			//prepare: create job
+			function(){
+				title = 'test job '+Date.now();
+				//create user
+				api.write.job({kids_id:1,parents_id:2,title:title},function(err,data){
+					(err||false).should.be.false;
+					id=data;
+					(id > 0).should.be.true;
+					done();
+				});
+			}
+			//select user. check roles
+			,function(){
+				api.get.job({id:id},function(err,data){
+					//user created with no role should not have role
+					(err||false).should.be.false;
+					(data.kids_id||0).should.eql(1);
+					(data.parents_id||0).should.eql(2);
+					(data.title||'').should.eql(title);
+					(data.id||0).should.eql(id);
+					done();
+				});
+			}
+			,function(){
+				desc = 'pandas love this job '+Date.now();
+				//create user
+				api.write.job({id:id,description:desc},function(err,data){
+					(err||false).should.be.false;
+
+					data.should.eql(id);
+					//data.description.should.eql(desc);
+					
+					done();
+				});
+			}
+			,function(){
+				api.get.job({id:id},function(err,data){
+					//user created with no role should not have role
+					(err||false).should.be.false;
+					(data.description).should.eql(desc);
+					
+					done();
+				});
+			}
+		], done = function(){
+			if(tests.length) {
+				cb = tests.shift();
+				cb();
+				return;
+			}
+			api.end();
+		};
+		done();
+		
+	}
 };

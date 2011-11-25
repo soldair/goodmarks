@@ -40,7 +40,13 @@ API.prototype = {
 			}
 			,job:function(data,cb){
 				var sql = "select * from jobs where id=?;";
-				parent.db.query(sql,[data.id],cb);
+				parent.db.query(sql,[data.id],function(err,data){
+					if(err) {
+						cb(err,data);
+					} else {
+						cb(err,data[0]);
+					}
+				});
 			}
 			,kidsJobs:function(data,cb){
 				var params = [data.id]
@@ -163,11 +169,11 @@ API.prototype = {
 							}
 							
 							var update = sqlutil.updateValues(data)
-							,sql = "update users set "+update.set+" where id=?";
+							,sql = "update users set "+update.set+" where id=?",id = +data.id;
 							update.values.push(+data.id);
 
 							parent.db.query(sql,update.values,function(err,data){
-								cb(err,data?validData.id:null);
+								cb(err,data?id:null);
 							});
 						} else {
 							//send errors to caller;
@@ -268,16 +274,8 @@ API.prototype = {
 					});
 				});
 			}
-			,job:function(){
-				/* 
-				`title` varchar(150) NOT NULL,
-				`description` text NOT NULL,
-				`points` int(11) unsigned NOT NULL DEFAULT '1',
-				`parents_id` int(11) unsigned DEFAULT NULL,
-				`kids_id` int(11) unsigned DEFAULT NULL,
-				`public` tinyint(1) unsigned NOT NULL DEFAULT '0',
-				`approved` tinyint(1) unsigned NOT NULL DEFAULT '0',
-				 */
+			,job:function(data,cb){
+
 				var sql,z=this;
 
 				if(data.id) {
@@ -287,9 +285,10 @@ API.prototype = {
 					if(data.parents_id) toValidate.parents_id = {valid:'id',value:data.parents_id};
 					if(data.kids_id) toValidate.kids_id = {valid:'id',value:data.kids_id};
 					if(data.description) toValidate.description = {valid:'text',value:data.description};
+					if(data.title) toValidate.title = {valid:'text',value:data.title};
 					
-					if(_u.undef != data.public) toValidate.public = {valid:'intBool',value:data.public}; 
-					if(_u.undef != data.approved) toValidate.approved = {valid:'intBool',value:data.approved};
+					if(_u.undef !== data.public) toValidate.public = {valid:'intBool',value:data.public}; 
+					if(_u.undef !== data.approved) toValidate.approved = {valid:'intBool',value:data.approved};
 					
 					valid.validate(toValidate,function(errors,validData){
 						delete validData.id;
@@ -298,11 +297,11 @@ API.prototype = {
 							//take all validated values from valid data 
 							
 							var update = sqlutil.updateValues(validData)
-							,sql = "update users set "+update.set+" where id=?";
+							,sql = "update jobs set "+update.set+" where id=?",id = +data.id;
 							update.values.push(+data.id);
 
 							parent.db.query(sql,update.values,function(err,data){
-								cb(err,data?validData.id:null);
+								cb(err,data?id:null);
 							});
 						} else {
 							//send errors to caller;
@@ -311,31 +310,34 @@ API.prototype = {
 					});
 
 				} else {
-					throw "incomplete insert job";
-					/*
-					valid.validate({
-						name:data.name
-						,email:data.email
-						,password:data.password
-					},function(errors,validData){
 
-						if(validData.password) {
-							validData.password = _u.encodePassword(validData.password);
+					var toValidate = {
+						points:{valid:'id',value:data.points||1}
+						,parents_id:{valid:'id',value:data.parents_id}
+						,kids_id:{valid:'id',value:data.kids_id}
+						,description:{valid:'text',value:data.description||''}
+						,public:{valid:'intBool',value:data.public||1} 
+						,approved:{valid:'intBool',value:data.approved||1}
+						,title:{valid:'text',value:data.title}
+					};
+
+					valid.validate(
+						toValidate
+						,function(errors,validData){
+							if(!errors){
+								var vs = sqlutil.values(validData)
+								,sql = "insert into jobs("+sqlutil.fields(validData)+") values("+vs.set+");";
+								
+								parent.db.query(sql,vs.values,function(err,data){
+									//TODO handle duplicate key messaging etc.
+									cb(err,data?data.insertId:data);
+								});
+							} else {
+								//send errors to caller;
+								cb(errors,null);
+							}
 						}
-						
-						if(!errors){
-							var vs = sqlutil.values(validData)
-							,sql = "insert into users("+sqlutil.fields(validData)+") values("+vs.set+");";
-							
-							parent.db.query(sql,vs.values,function(err,data){
-								//TODO handle duplicate key messaging etc.
-								cb(err,data?data.insertId:data);
-							});
-						} else {
-							//send errors to caller;
-							cb(errors,null);
-						}
-					});*/
+					);
 				}
 				
 			}
@@ -397,7 +399,7 @@ API.prototype = {
 		};
 	},
 	end:function(){
-		this.db.end();
+		if(this.db) this.db.end();
 		this.db = null;
 	}
 }

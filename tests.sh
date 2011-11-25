@@ -19,7 +19,7 @@ then
 else
 	EXPRESSO_TEST_PATH=`pwd`
 	export NODE_PATH=$NODE_PATH:$EXPRESSO_TEST_PATH
-	echo $NODE_PATH
+	#echo $NODE_PATH
 	expresso tests/*
 	exit
 fi

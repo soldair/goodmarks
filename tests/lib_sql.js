@@ -80,9 +80,9 @@ module.exports = {
 	'test select no limit':function(){
 		var o = sql.select('test',{limit:-1});
 		o.sql.should.eql("select * from `test`");
-	},
+	}/*, no such thing yet
 	'test select shorthand filters':function(){
 		//var o = sql.select('test',{a:1});
 		//o.sql.should.eql("select * from `test` where `a` = ? limit ?");
-	}
+	}*/
 }
