@@ -19,8 +19,7 @@ API.prototype = {
 	},
 	initGet:function(parent){
 		return {
-			_parent:parent
-			,user:function(data,cb){
+			user:function(data,cb){
 				var sql = "select u.*,group_concat(r.name) as roles from users u left join roles_names r on(u.perms & r.mask) where u.id=? group by u.id;"
 				parent.db.query(sql,[data.id],function(err,data){
 					if(err) {
@@ -260,23 +259,23 @@ API.prototype = {
 						,value:data.kids_id
 					}
 				},function(errors,validData){
-					//has approved record in kid requests?
 
-					//is a parent?: select * from users u inner join roles_names r on(r.name='parent' && u.perms & r.mask);
-					//set parent: update users set perms=perms | (select mask from roles_names where name='parent') where id=10;
-					//get all roles: select name from roles_names where (select perms from users where id=10) & mask;
-					
-					var vs = sqlutil.values(validData)
-					,sql = "insert into parents_to_kids("+sqlutil.fields(validData)+") values("+vs.set+") on duplicate key update `id`=`id`;";
-					
-					parent.db.query(sql,function(err,data){
-						cb(err,data?data.insertId:id);
-					});
+					if(!errors) {
+						var vs = sqlutil.values(validData)
+						,sql = "insert into parents_to_kids("+sqlutil.fields(validData)+") values("+vs.set+") on duplicate key update `id`=`id`;";
+						
+						parent.db.query(sql,vs.values,function(err,data){
+							cb(err,data?data.insertId:null);
+						});
+					} else {
+						//send errors to caller;
+						cb(errors,null);
+					}
 				});
 			}
 			,job:function(data,cb){
 
-				var sql,z=this;
+				var z=this;
 
 				if(data.id) {
 
@@ -352,6 +351,66 @@ API.prototype = {
 				`approved` tinyint(1) NOT NULL DEFAULT '-1',
 				`note` varchar(150) NOT NULL DEFAULT '',
 				 */
+
+				var sql,z=this;
+
+				if(data.id) {
+
+					var toValidate = {};
+
+					if(data.jobs_id) toValidate.jobs_id = {valid:'id',value:data.jobs_id};
+					if(data.kids_id) toValidate.kids_id = {valid:'id',value:data.kids_id};
+					if(data.stickers_id) toValidate.stickers_id = {valid:'id',value:data.stickers_id};
+					if(data.note) toValidate.note = {valid:'text',value:data.note};
+					if(_u.undef !== data.good) toValidate.good = {valid:'intBool',value:data.good}; 
+					
+					valid.validate(toValidate,function(errors,validData){
+						//data is cleaned and/or cast in validation
+						if(!errors){
+							//take all validated values from valid data 
+							
+							var update = sqlutil.updateValues(validData)
+							,sql = "update marks set "+update.set+" where id=?",id = +data.id;
+							update.values.push(+data.id);
+
+							parent.db.query(sql,update.values,function(err,data){
+								cb(err,data?id:null);
+							});
+						} else {
+							//send errors to caller;
+							cb(errors,null);
+						}
+					});
+
+				} else {
+
+					var toValidate = {
+						jobs_id:{valid:'id',value:data.jobs_id}
+						,kids_id:{valid:'id',value:data.kids_id}
+						,stickers_id:{valid:'id',value:data.stickers_id}
+					};
+					
+					if(_u.undef !== data.good) toValidate.good = {valid:'intBool',value:data.good}
+					if(_u.undef !== data.note) toValidate.note = {valid:'text',value:data.note}
+
+					valid.validate(
+						toValidate
+						,function(errors,validData){
+							if(!errors){
+								var vs = sqlutil.values(validData)
+								,sql = "insert into marks("+sqlutil.fields(validData)+") values("+vs.set+");";
+								
+								parent.db.query(sql,vs.values,function(err,data){
+									//TODO handle duplicate key messaging etc.
+									cb(err,data?data.insertId:data);
+								});
+							} else {
+								//send errors to caller;
+								cb(errors,null);
+							}
+						}
+					);
+				}
 			}
 			,sticker:function(){
 				/*
@@ -389,11 +448,21 @@ API.prototype = {
 					});
 				});
 			}
-			,parentsToKid:function(){
-				
+			,parentsToKid:function(data,cb){
+				valid.validate({id:data.id},function(errors,validData){
+					var sql = "delete from parents_to_kids where id=?;";
+					parent.db.query(sql,[validData.id],function(err,data){
+						cb(err,data);
+					});
+				});
 			}
 			,mark:function(){
-				
+				valid.validate({id:data.id},function(errors,validData){
+					var sql = "delete from marks where id=?;";
+					parent.db.query(sql,[validData.id],function(err,data){
+						cb(err,data);
+					});
+				});
 			}
 			,sticker:function(){
 				

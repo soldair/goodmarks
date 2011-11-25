@@ -178,6 +178,71 @@ module.exports = {
 		};
 		done();
 	}
+	,"test create parents to kids no data":function(){
+		var z = this
+		,api = new API(getDb());
+		
+		api.write.parentsToKids({},function(err,data){
+			api.end();
+
+			err.kids_id.code.should.eql('idInvalid'); 
+			err.parents_id.code.should.eql('idInvalid');
+		});
+	}
+	,"test crud parents to kids":function(){
+		var z = this
+		,db = getDb()
+		,api = new API(db)
+		,id;
+
+		var tests = [
+			function(){
+				api.write.parentsToKids({kids_id:1,parents_id:2},function(err,insertId){
+					(err||false).should.be.false;
+					insertId.should.be.above(0);
+					id = insertId;
+					done();
+				});
+			}
+			,function(){
+				//should not have insert id
+				api.write.parentsToKids({kids_id:1,parents_id:2},function(err,insertId){
+					(err||false).should.be.false;
+					(insertId||false).should.be.false;
+					done();
+				});
+			}
+			,function(){
+				api.get.parentsToKids({kids_id:1,parents_id:1},function(err,rows){
+					(err||false).should.be.false;
+					var r = rows[0];
+					r.id.should.eql(id);
+					done();
+				});
+			}
+			,function(){
+				api.delete.parentsToKid({id:id},function(err,data){
+					(err||false).should.be.false;
+					done();
+				});
+			}
+			,function(){
+				api.get.parentsToKids({kids_id:1,parents_id:1},function(err,rows){
+					(err||false).should.be.false;
+					rows.length.should.eql(0);
+					done();
+				});
+			}
+		], done = function(){
+			if(tests.length) {
+				cb = tests.shift();
+				cb();
+				return;
+			}
+			api.end();
+		};
+		done();
+	}
 	,"test create job no data":function(){
 		var z = this
 		,api = new API(getDb());
